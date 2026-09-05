@@ -21,8 +21,8 @@ export const SolvenciaQRModal: React.FC<SolvenciaQRModalProps> = ({ parcela, onC
   const fechaVencimiento = "31 de Diciembre de 2026";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl glass-card rounded-3xl border border-robles-500/40 p-6 sm:p-8 space-y-6 shadow-2xl my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-xl glass-card rounded-3xl border border-robles-500/40 p-5 sm:p-8 space-y-6 shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}

@@ -79,34 +79,61 @@ export const CatastroView: React.FC<CatastroViewProps> = ({
         </div>
       </div>
 
-      {/* Simple Search & Manzana Filter */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar parcela, propietario o cédula..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-robles-400"
-          />
+      {/* Search & Manzana Filter */}
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar parcela, propietario o cédula..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-robles-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+            <select
+              value={selectedManzana}
+              onChange={(e) => setSelectedManzana(e.target.value)}
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white focus:outline-none focus:border-robles-400"
+            >
+              <option value="ALL">Todas las Manzanas (A - F)</option>
+              <option value="Manzana A">Manzana A</option>
+              <option value="Manzana B">Manzana B</option>
+              <option value="Manzana C">Manzana C</option>
+              <option value="Manzana D">Manzana D</option>
+              <option value="Manzana E">Manzana E</option>
+              <option value="Manzana F">Manzana F</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          <select
-            value={selectedManzana}
-            onChange={(e) => setSelectedManzana(e.target.value)}
-            className="w-full py-2 px-3 rounded-xl bg-slate-900/90 border border-slate-700 text-xs text-white focus:outline-none focus:border-robles-400"
-          >
-            <option value="ALL">Todas las Manzanas (A - F)</option>
-            <option value="Manzana A">Manzana A</option>
-            <option value="Manzana B">Manzana B</option>
-            <option value="Manzana C">Manzana C</option>
-            <option value="Manzana D">Manzana D</option>
-            <option value="Manzana E">Manzana E</option>
-            <option value="Manzana F">Manzana F</option>
-          </select>
+        {/* Quick Horizontal Manzana Chips (Mobile & Desktop) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {[
+            { id: "ALL", label: "Todas" },
+            { id: "Manzana A", label: "Mz A" },
+            { id: "Manzana B", label: "Mz B" },
+            { id: "Manzana C", label: "Mz C" },
+            { id: "Manzana D", label: "Mz D" },
+            { id: "Manzana E", label: "Mz E" },
+            { id: "Manzana F", label: "Mz F" },
+          ].map((mz) => (
+            <button
+              key={mz.id}
+              onClick={() => setSelectedManzana(mz.id)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition active:scale-95 ${
+                selectedManzana === mz.id
+                  ? "bg-robles-500 text-slate-950 font-bold shadow-sm shadow-robles-500/20"
+                  : "bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800"
+              }`}
+            >
+              {mz.label}
+            </button>
+          ))}
         </div>
       </div>
 

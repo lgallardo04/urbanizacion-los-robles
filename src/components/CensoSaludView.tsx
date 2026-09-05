@@ -130,29 +130,54 @@ export const CensoSaludView: React.FC<CensoSaludViewProps> = ({ onSelectParcela 
       </div>
 
       {/* Filters */}
-      <div className="glass-card p-4 rounded-2xl border border-surface-border flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar por apellido de familia, habitante o cédula..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-slate-900/90 border border-slate-700/70 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-robles-400"
-          />
+      <div className="glass-card p-4 rounded-2xl border border-surface-border space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar por apellido de familia, habitante o cédula..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/70 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-robles-400"
+            />
+          </div>
+
+          <select
+            value={filterSalud}
+            onChange={(e) => setFilterSalud(e.target.value)}
+            className="py-2.5 px-3 rounded-xl bg-slate-900/90 border border-slate-700/70 text-xs text-white focus:outline-none focus:border-robles-400"
+          >
+            <option value="ALL">Todos los Registros Familiares</option>
+            <option value="CRONICOS">Con Patologías Crónicas</option>
+            <option value="ADULTOS_MAYORES">Con Adultos Mayores</option>
+            <option value="EMBARAZADAS">Con Embarazadas</option>
+            <option value="DISCAPACIDAD">Con Personas con Discapacidad</option>
+          </select>
         </div>
 
-        <select
-          value={filterSalud}
-          onChange={(e) => setFilterSalud(e.target.value)}
-          className="py-2 px-3 rounded-xl bg-slate-900/90 border border-slate-700/70 text-xs text-white focus:outline-none focus:border-robles-400"
-        >
-          <option value="ALL">Todos los Registros Familiares</option>
-          <option value="CRONICOS">Con Patologías Crónicas</option>
-          <option value="ADULTOS_MAYORES">Con Adultos Mayores</option>
-          <option value="EMBARAZADAS">Con Embarazadas</option>
-          <option value="DISCAPACIDAD">Con Personas con Discapacidad</option>
-        </select>
+        {/* Quick Filter Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+          {[
+            { id: "ALL", label: "Todos los Hogares" },
+            { id: "CRONICOS", label: "Patologías Crónicas" },
+            { id: "ADULTOS_MAYORES", label: "Adultos Mayores (60+)" },
+            { id: "EMBARAZADAS", label: "Gestantes / Lactantes" },
+            { id: "DISCAPACIDAD", label: "Discapacidad" },
+          ].map((chip) => (
+            <button
+              key={chip.id}
+              onClick={() => setFilterSalud(chip.id)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition active:scale-95 ${
+                filterSalud === chip.id
+                  ? "bg-rose-500 text-white font-bold shadow-sm shadow-rose-500/20"
+                  : "bg-slate-900/80 hover:bg-slate-800 text-slate-300 border border-slate-800"
+              }`}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Family Census Cards List */}

@@ -28,6 +28,7 @@ import { Toaster } from "react-hot-toast";
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSimuladorOpen, setIsSimuladorOpen] = useState(false);
   const [isComunicadosOpen, setIsComunicadosOpen] = useState(false);
   const [selectedParcelaForSolvencia, setSelectedParcelaForSolvencia] = useState<ParcelaUrbanismo | null>(null);
@@ -55,20 +56,32 @@ export default function Home() {
         onOpenSimulador={() => setIsSimuladorOpen(true)}
         onOpenComunicados={() => setIsComunicadosOpen(true)}
         onOpenAsistente={() => setActiveTab("asistente")}
+        onToggleMobileMenu={() => setIsMobileMenuOpen((prev) => !prev)}
       />
 
       {/* Main Container */}
       <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left Sidebar (Desktop) */}
+        {/* Left Sidebar (Desktop & Mobile Drawer) */}
         <Sidebar
           activeTab={activeTab}
-          onSelectTab={(tab) => setActiveTab(tab)}
-          onOpenSimulador={() => setIsSimuladorOpen(true)}
-          onOpenComunicados={() => setIsComunicadosOpen(true)}
+          onSelectTab={(tab) => {
+            setActiveTab(tab);
+            setIsMobileMenuOpen(false);
+          }}
+          onOpenSimulador={() => {
+            setIsSimuladorOpen(true);
+            setIsMobileMenuOpen(false);
+          }}
+          onOpenComunicados={() => {
+            setIsComunicadosOpen(true);
+            setIsMobileMenuOpen(false);
+          }}
+          isOpenMobile={isMobileMenuOpen}
+          onCloseMobile={() => setIsMobileMenuOpen(false)}
         />
 
         {/* Dynamic Center View */}
-        <section className="flex-1 p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full">
+        <section className="flex-1 p-3 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full pb-28 lg:pb-10">
           <ErrorBoundary>
             {activeTab === "dashboard" && (
               <DashboardView
