@@ -1,0 +1,320 @@
+// Prisma Schema - Urbanización Los Robles
+// Sistema Integral de Gestión de Urbanismo, Censo Comunal y Servicios (SIA-URB)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  ADMIN_GENERAL
+  COMITE_URBANISMO
+  JEFE_MANZANA
+  PROPIETARIO
+  VECINO
+}
+
+enum TipoInmueble {
+  UNIFAMILIAR_AISLADA
+  UNIFAMILIAR_PAREADA
+  BIFAMILIAR
+  MULTIFAMILIAR
+  COMERCIAL_VECINAL
+}
+
+enum Zonificacion {
+  R1_UNIFAMILIAR
+  R2_BIFAMILIAR
+  R3_MULTIFAMILIAR
+  C1_COMERCIAL_LOCAL
+  AV_AREA_VERDE_RECREATIVA
+}
+
+enum EstatusNormativo {
+  CONFORME_TOTAL
+  OBSERVACION_MENOR
+  EN_TRAMITE_REMODELACION
+  INFRACCION_RETIROS
+  INFRACCION_USO_SUELO
+}
+
+enum EstatusSolvencia {
+  SOLVENTE
+  PENDIENTE_MES_ACTUAL
+  EN_MORA
+  EXONERADO
+}
+
+enum Parentesco {
+  JEFE_FAMILIA
+  CONYUGE
+  HIJO_HIJA
+  PADRE_MADRE
+  HERMANO_HERMANA
+  ABUELO_ABUELA
+  OTRO_FAMILIAR
+  ARRENDATARIO
+}
+
+enum NivelTension {
+  MONOFASICO_110V
+  BIFASICO_220V
+  TRIFASICO_208_220V
+}
+
+model Usuario {
+  id            String      @id @default(uuid())
+  cedula        String      @unique
+  nombre        String
+  apellido      String
+  email         String      @unique
+  telefono      String?
+  passwordHash  String
+  rol           RolUsuario  @default(VECINO)
+  activo        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  parcelas      Parcela[]   @relation("PropietarioParcela")
+  habitante     Habitante?
+}
+
+model Manzana {
+  id              String      @id @default(uuid())
+  codigo          String      @unique // Ej: "MANZANA_A", "MANZANA_B"
+  nombre          String      // "Manzana A"
+  sector          String      @default("Sector Único")
+  totalParcelas   Int         @default(0)
+  jefeManzanaId   String?
+  observaciones   String?
+
+  parcelas        Parcela[]
+  transformadores Transformador[]
+}
+
+model Parcela {
+  id                  String           @id @default(uuid())
+  numeroParcela       String           // Ej: "P-042"
+  manzanaId           String
+  manzana             Manzana          @relation(fields: [manzanaId], references: [id], onDelete: Cascade)
+  calle               String           // "Calle Los Samanes"
+  codigoCatastral     String           @unique // "3303-URB-ROBLES-MZA-C-P042"
+  
+  // Parámetros de Terreno y Construcción (Normativa Venezolana LOOU)
+  areaTerrenoM2       Float            @default(250.0)
+  areaConstruccionM2  Float            @default(180.0)
+  porcentajeUbicacion Float            @default(60.0) // % área cubierta sobre terreno
+  porcentajeConstrucc Float            @default(120.0) // % área total construida
+  plantasConstruidas  Int              @default(1)
+  zonificacion        Zonificacion     @default(R2_BIFAMILIAR)
+  tipoInmueble        TipoInmueble     @default(UNIFAMILIAR_AISLADA)
+  
+  // Retiros Reglamentarios (Normativa Municipal de Urbanismo)
+  retiroFrenteM       Float            @default(4.0) // Exigido: >= 4.00 m
+  retiroLateralIzqM   Float            @default(2.5) // Exigido: >= 2.00 m
+  retiroLateralDerM   Float            @default(2.0)
+  retiroFondoM        Float            @default(3.5) // Exigido: >= 3.00 m
+  areaPermeableM2     Float            @default(45.0) // Área verde absorbente
+  
+  estatusNormativo    EstatusNormativo @default(CONFORME_TOTAL)
+  estatusSolvencia    EstatusSolvencia @default(SOLVENTE)
+  
+  // Propietario
+  propietarioId       String?
+  propietario         Usuario?         @relation("PropietarioParcela", fields: [propietarioId], references: [id])
+
+  // Servicios Residenciales
+  servicios           ServiciosVivienda?
+  familia             Familia?
+  inspecciones        InspeccionUrbanistica[]
+  pagosCondominio     PagoCondominio[]
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model ServiciosVivienda {
+  id                    String        @id @default(uuid())
+  parcelaId             String        @unique
+  parcela               Parcela       @relation(fields: [parcelaId], references: [id], onDelete: Cascade)
+  
+  // Agua Potable (Norma COVENIN 4044 / Hidrológica)
+  conexionRedAcueducto  Boolean       @default(true)
+  tieneTanqueSubterraneo Boolean      @default(true)
+  capacidadTanqueLitros Float         @default(8000.0)
+  sistemaHidroneumatico Boolean       @default(true)
+  dotacionDiariaCalculada Float       @default(1200.0) // L/día según nro habitantes
+  
+  // Electricidad (CORPOELEC)
+  numeroMedidor         String?
+  tensionServicio       NivelTension  @default(BIFASICO_220V)
+  capacidadBreakerAmp   Int           @default(100)
+  tieneProtectorVoltaje Boolean       @default(true)
+  tienePlantaElectrica  Boolean       @default(false)
+  
+  // Gas y Residuos
+  tipoServicioGas       String        @default("BOMBONA_GLP_43KG") // BOMBONA_GLP_10KG, BOMBONA_GLP_43KG, DIRECTO
+  cantidadBombonas      Int           @default(2)
+  pagoAseoAlDia         Boolean       @default(true)
+  
+  // Telecomunicaciones
+  proveedorInternet     String?       @default("FIBRA_OPTICA_CANTV") // FIBRA_OPTICA, INTER, THUNDERNECK
+  velocidadMbps         Int           @default(100)
+}
+
+model Familia {
+  id                  String        @id @default(uuid())
+  parcelaId           String        @unique
+  parcela             Parcela       @relation(fields: [parcelaId], references: [id], onDelete: Cascade)
+  codigoFamilia       String        @unique // "FAM-ROBLES-C042"
+  apellidoFamilia     String        // "Familia Mendoza Rivas"
+  fechaCenso          DateTime      @default(now())
+  censadorResponsable String?
+  observaciones       String?
+
+  miembros            Habitante[]
+  vehiculos           Vehiculo[]
+  mascotas            Mascota[]
+}
+
+model Habitante {
+  id                  String        @id @default(uuid())
+  familiaId           String
+  familia             Familia       @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  usuarioId           String?       @unique
+  usuario             Usuario?      @relation(fields: [usuarioId], references: [id])
+  
+  cedula              String        @unique // "V-14892304"
+  nombres             String
+  apellidos           String
+  fechaNacimiento     DateTime
+  sexo                String        // "M", "F"
+  parentesco          Parentesco    @default(JEFE_FAMILIA)
+  telefono            String?
+  profesionOficio     String?
+  nivelEducativo      String?
+  
+  // Vulnerabilidad y Salud Comunitaria (Inteligente)
+  embarazada          Boolean       @default(false)
+  discapacidad        Boolean       @default(false)
+  tipoDiscapacidad    String?
+  adultoMayor         Boolean       @default(false)
+  requiereAtencionPrioritaria Boolean @default(false)
+  
+  patologias          PatologiaHabitante[]
+  medicamentos        MedicamentoHabitante[]
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+model Patologia {
+  id          String                @id @default(uuid())
+  codigo      String                @unique // "HIPERTENSION", "DIABETES_T2", "ASMA"
+  nombre      String
+  categoria   String                @default("CRONICA") // CRONICA, AGUDA, DISCAPACITANTE
+  descripcion String?
+
+  habitantes  PatologiaHabitante[]
+}
+
+model PatologiaHabitante {
+  id            String     @id @default(uuid())
+  habitanteId   String
+  habitante     Habitante  @relation(fields: [habitanteId], references: [id], onDelete: Cascade)
+  patologiaId   String
+  patologia     Patologia  @relation(fields: [patologiaId], references: [id], onDelete: Cascade)
+  observaciones String?
+
+  @@unique([habitanteId, patologiaId])
+}
+
+model Medicamento {
+  id              String                @id @default(uuid())
+  nombreGenerico  String                // "Losartán Potásico"
+  nombreComercial String?               // "Cozaar"
+  presentacion    String                // "50 mg Comprimidos"
+  tipoTratamiento String                @default("PERMANENTE")
+
+  habitantes      MedicamentoHabitante[]
+}
+
+model MedicamentoHabitante {
+  id            String      @id @default(uuid())
+  habitanteId   String
+  habitante     Habitante   @relation(fields: [habitanteId], references: [id], onDelete: Cascade)
+  medicamentoId String
+  medicamento   Medicamento @relation(fields: [medicamentoId], references: [id], onDelete: Cascade)
+  dosisDiaria   String?     // "1 comprimido cada 12 horas"
+  cantidadMensual Int       @default(30)
+
+  @@unique([habitanteId, medicamentoId])
+}
+
+model Vehiculo {
+  id          String   @id @default(uuid())
+  familiaId   String
+  familia     Familia  @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  marca       String   // "Toyota"
+  modelo      String   // "Corolla"
+  anio        Int      @default(2015)
+  color       String   // "Gris Plata"
+  placa       String   @unique // "AB123CD"
+  tagRfid     String?  @unique // "RFID-ROBLES-042A"
+  activo      Boolean  @default(true)
+}
+
+model Mascota {
+  id                  String   @id @default(uuid())
+  familiaId           String
+  familia             Familia  @relation(fields: [familiaId], references: [id], onDelete: Cascade)
+  especie             String   // "CANINO", "FELINO"
+  nombre              String
+  raza                String?
+  vacunadoAntirrabica Boolean  @default(true)
+  fechaUltimaVacuna   DateTime?
+}
+
+model InspeccionUrbanistica {
+  id                  String           @id @default(uuid())
+  parcelaId           String
+  parcela             Parcela          @relation(fields: [parcelaId], references: [id], onDelete: Cascade)
+  inspectorNombre     String
+  fechaInspeccion     DateTime         @default(now())
+  tipoTramite         String           // "REVISION_RUTINARIA", "SOLICITUD_REMODELACION", "DENUNCIA_VECINAL"
+  resultado           EstatusNormativo @default(CONFORME_TOTAL)
+  motivoObservacion   String?
+  fotografiasUrls     String[]
+  aprobado            Boolean          @default(true)
+}
+
+model PagoCondominio {
+  id            String           @id @default(uuid())
+  parcelaId     String
+  parcela       Parcela          @relation(fields: [parcelaId], references: [id], onDelete: Cascade)
+  mes           Int              // 1 - 12
+  anio          Int              // 2026
+  montoUsd      Float            @default(25.0)
+  montoBs       Float            // Calculado tasa BCV
+  tasaBcv       Float
+  referencia    String           // Número de referencia transferencia o pago móvil
+  bancoOrigen   String
+  estatus       EstatusSolvencia @default(SOLVENTE)
+  fechaPago     DateTime         @default(now())
+  comprobanteUrl String?
+}
+
+model Transformador {
+  id          String   @id @default(uuid())
+  codigo      String   @unique // "TX-ROBLES-01"
+  manzanaId   String
+  manzana     Manzana  @relation(fields: [manzanaId], references: [id])
+  capacidadKva Float   @default(75.0)
+  fases       Int      @default(3)
+  estatus     String   @default("OPERATIVO") // OPERATIVO, EN_MANTENIMIENTO, SOBRECARGA
+  cargaActual Float    @default(65.0) // %
+}
