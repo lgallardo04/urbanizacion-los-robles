@@ -137,7 +137,7 @@ export const MapaUrbanismoView: React.FC<MapaUrbanismoViewProps> = ({ onNavigate
 
   const handleSelectManzana = (id: string) => {
     setSelectedManzanaId(id);
-    if (window.innerWidth < 1024) {
+    if (typeof window !== "undefined" && window.innerWidth < 1024) {
       setIsMobileModalOpen(true);
     }
   };
